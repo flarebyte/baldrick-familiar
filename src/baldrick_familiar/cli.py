@@ -15,7 +15,7 @@ from typing import Optional
 from llama_index.core import StorageContext, load_index_from_storage
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.ollama import Ollama
-
+import logging
 
 APP_DIR = Path.home() / ".baldrick_familiar"
 CACHE_DIR = APP_DIR / "cache" / "llama"
@@ -24,11 +24,49 @@ DEFAULT_INDEX_PATH = CACHE_DIR / "default_index"
 DEFAULT_EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 DEFAULT_OLLAMA_MODEL = "gemma3:1b"
 
+
 def resolve_index_path(cli_arg: str | None = None) -> Path:
     """Return the index path, using CLI arg if provided, else default."""
     if cli_arg:
         return Path(cli_arg).expanduser()
     return DEFAULT_INDEX_PATH
+
+
+def configure_logging(
+    verbose: bool = False, debug: bool = False, level: str | None = None
+):
+    """
+    Configure logging for CLI.
+    - Default: WARNING (quiet)
+    - --verbose: INFO
+    - --debug: DEBUG
+    - --log-level LEVEL: override manually
+    """
+    if level:
+        lvl = getattr(logging, level.upper(), logging.WARNING)
+    elif debug:
+        lvl = logging.DEBUG
+    elif verbose:
+        lvl = logging.INFO
+    else:
+        lvl = logging.WARNING  # default minimum
+
+    # Configure root logger
+    logging.basicConfig(
+        level=lvl,
+        format="%(message)s",  # concise format for CLI output
+    )
+
+    # Quiet down noisy libs
+    for name in (
+        "llama_index",
+        "llama_index.core",
+        "httpx",
+        "urllib3",
+        "openai",
+    ):
+        logging.getLogger(name).setLevel(lvl)
+        logging.getLogger(name).propagate = False
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -72,9 +110,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional temperature for the LLM.",
     )
+    p.add_argument("--verbose", "-v", action="store_true", help="Show info-level logs.")
     p.add_argument(
-        "--verbose", action="store_true", help="Print extra diagnostics to STDERR."
+        "--debug", action="store_true", help="Show debug logs for troubleshooting."
     )
+    p.add_argument(
+        "--log-level",
+        choices=["ERROR", "WARNING", "INFO", "DEBUG"],
+        help="Set an explicit log level (overrides --verbose/--debug).",
+    )
+
     return p
 
 
@@ -85,6 +130,8 @@ def err(msg: str) -> None:
 def main() -> int:
     parser = build_arg_parser()
     args = parser.parse_args()
+    configure_logging(verbose=args.verbose, debug=args.debug, level=args.log_level)
+
     index_path = resolve_index_path(args.index_path)
 
     # Ensure the directory exists
