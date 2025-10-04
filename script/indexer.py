@@ -3,10 +3,12 @@ from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, StorageCon
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.ollama import Ollama
 DATA_DIR = Path("temp/data")
-INDEX_DIR = Path("temp/llama")
 INDEX_NAME = "default_index"
 
-INDEX_PATH = INDEX_DIR / INDEX_NAME
+APP_DIR = Path.home() / ".baldrick_familiar"
+CACHE_DIR = APP_DIR / "cache" / "llama"
+
+INDEX_PATH = CACHE_DIR / INDEX_NAME
 INDEX_PATH.mkdir(parents=True, exist_ok=True)
 
 documents = SimpleDirectoryReader(DATA_DIR).load_data()
