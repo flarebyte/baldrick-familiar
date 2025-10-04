@@ -11,10 +11,6 @@ from __future__ import annotations
 import argparse, json, sys
 from pathlib import Path
 from typing import Optional
-
-from llama_index.core import StorageContext, load_index_from_storage
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from llama_index.llms.ollama import Ollama
 import logging
 
 APP_DIR = Path.home() / ".baldrick_familiar"
@@ -71,8 +67,8 @@ def configure_logging(
 
 def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="llama-cli",
-        description="Query a persisted LlamaIndex.",
+        prog="familiar",
+        description="A clever little Docker familiar built with Python who always knows the shortest path to the best docs and the most useful code hints",
     )
     p.add_argument("prompt", nargs="?", help="The prompt/question to run.")
     p.add_argument(
@@ -131,6 +127,14 @@ def main() -> int:
     parser = build_arg_parser()
     args = parser.parse_args()
     configure_logging(verbose=args.verbose, debug=args.debug, level=args.log_level)
+
+    if not (args.verbose or args.debug or args.log_level):
+        li = logging.getLogger("llama_index")
+        li.disabled = True  # nuclear option: no logs at all from LlamaIndex
+    
+    from llama_index.core import StorageContext, load_index_from_storage
+    from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+    from llama_index.llms.ollama import Ollama
 
     index_path = resolve_index_path(args.index_path)
 

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "baldrick_familiar"
-version = "0.1.2"
+version = "0.1.4"
 description = "A clever little Docker familiar built with Python who always knows the shortest path to the best docs and the most useful code hints"
 readme = "README.md"
 requires-python = ">=3.12"
