@@ -17,7 +17,8 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.ollama import Ollama
 
 
-DEFAULT_INDEX_PATH = Path("temp/llama/default_index")
+SCRIPT_DIR = Path(__file__).resolve().parent
+DEFAULT_INDEX_PATH = SCRIPT_DIR / "temp" / "llama" / "default_index"
 DEFAULT_EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 DEFAULT_OLLAMA_MODEL = "gemma3:1b"
 
