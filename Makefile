@@ -1,2 +1,3 @@
-download:
-	python script/download.py
+snapshotter:
+	mkdir -p temp/github
+	python script/snapshotter.py
