@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling>=1.22"]
+build-backend = "hatchling.build"
+
 [project]
 name = "baldrick-familiar"
 version = "0.1.0"
@@ -12,3 +16,5 @@ dependencies = [
     "llama-index-llms-llama-cpp>=0.5.1",
     "llama-index-llms-ollama>=0.8.0",
 ]
+[project.scripts]
+familiar = "baldrick_familiar.cli:main"
