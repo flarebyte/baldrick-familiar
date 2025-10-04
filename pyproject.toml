@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling>=1.22"]
+build-backend = "hatchling.build"
+
+[project]
+name = "baldrick-familiar"
+version = "0.1.0"
+description = "A clever little Docker familiar built with Python who always knows the shortest path to the best docs and the most useful code hints"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "chromadb>=1.1.0",
+    "llama-cpp-python>=0.3.16",
+    "llama-index>=0.14.4",
+    "llama-index-embeddings-huggingface>=0.6.1",
+    "llama-index-llms-llama-cpp>=0.5.1",
+    "llama-index-llms-ollama>=0.8.0",
+]
+[project.scripts]
+familiar = "baldrick_familiar.cli:main"
