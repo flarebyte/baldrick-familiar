@@ -24,9 +24,14 @@ from typing import Optional, Tuple
 
 # ---------- Configuration ----------
 REPOS = [
-    # Fill with "org/name" entries, e.g.:
-    # "psf/requests",
-    # "pallets/flask",
+    "flarebyte/baldrick-broth",
+    "flarebyte/baldrick-pest",
+    "flarebyte/baldrick-whisker",
+    "flarebyte/baldrick-dev-ts",
+    "flarebyte/learning",
+    "flarebyte/baldrick-reserve",
+    "flarebyte/clingy-code-detective",
+    "flarebyte/overview"
 ]
 BASE_DIR = Path("./temp/github")  # working root for downloads and commit files
 # ----------------------------------
