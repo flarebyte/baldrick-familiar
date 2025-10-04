@@ -8,10 +8,15 @@ Minimal agent-friendly CLI for querying a persisted LlamaIndex.
 """
 
 from __future__ import annotations
+from contextlib import redirect_stderr, redirect_stdout
+import os
 import argparse, json, sys
 from pathlib import Path
 from typing import Optional
 import logging
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.llms.ollama import Ollama
+
 
 APP_DIR = Path.home() / ".baldrick_familiar"
 CACHE_DIR = APP_DIR / "cache" / "llama"
@@ -57,13 +62,27 @@ def configure_logging(
     for name in (
         "llama_index",
         "llama_index.core",
+        "llama_index.core.storage",
+        "llama_index.core.storage.kvstore",
+        "gpt_index",  # legacy
         "httpx",
         "urllib3",
         "openai",
     ):
         logging.getLogger(name).setLevel(lvl)
         logging.getLogger(name).propagate = False
+        
+def load_index_quiet(persist_dir, embed_model, verbose=False, debug=False):
+    from llama_index.core import StorageContext, load_index_from_storage
+    # only silence when not verbose/debug
+    if verbose or debug:
+        storage = StorageContext.from_defaults(persist_dir=persist_dir)
+        return load_index_from_storage(storage, embed_model=embed_model)
 
+    with open(os.devnull, "w") as devnull, redirect_stdout(devnull), redirect_stderr(devnull):
+        storage = StorageContext.from_defaults(persist_dir=persist_dir)
+        return load_index_from_storage(storage, embed_model=embed_model)
+    
 
 def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
@@ -127,15 +146,7 @@ def main() -> int:
     parser = build_arg_parser()
     args = parser.parse_args()
     configure_logging(verbose=args.verbose, debug=args.debug, level=args.log_level)
-
-    if not (args.verbose or args.debug or args.log_level):
-        li = logging.getLogger("llama_index")
-        li.disabled = True  # nuclear option: no logs at all from LlamaIndex
     
-    from llama_index.core import StorageContext, load_index_from_storage
-    from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-    from llama_index.llms.ollama import Ollama
-
     index_path = resolve_index_path(args.index_path)
 
     # Ensure the directory exists
@@ -171,8 +182,7 @@ def main() -> int:
         llm = Ollama(model=args.model, **llm_kwargs)
 
         # Load index
-        storage = StorageContext.from_defaults(persist_dir=index_path)
-        index = load_index_from_storage(storage, embed_model=embed)
+        index = load_index_quiet(index_path, embed, verbose=args.verbose, debug=args.debug)
 
         # Query
         qe = index.as_query_engine(llm=llm)
