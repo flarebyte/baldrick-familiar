@@ -1,14 +1,20 @@
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from pathlib import Path
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, StorageContext, load_index_from_storage
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.ollama import Ollama
+DATA_DIR = Path("temp/data")
+INDEX_DIR = Path("temp/llama")
+INDEX_NAME = "default_index"
 
-documents = SimpleDirectoryReader("temp/data").load_data()
+INDEX_PATH = INDEX_DIR / INDEX_NAME
+INDEX_PATH.mkdir(parents=True, exist_ok=True)
+
+documents = SimpleDirectoryReader(DATA_DIR).load_data()
 
 embed_model = HuggingFaceEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
+
 index = VectorStoreIndex.from_documents(documents, embed_model=embed_model)
 
-llm = Ollama(model="gemma3:1b")
-query_engine = index.as_query_engine(llm=llm)
+index.storage_context.persist(persist_dir=INDEX_PATH)
 
-response = query_engine.query("How do I use regex in aws athena")
-print(response)
+print(f"✅ Index saved to: {INDEX_PATH}")
