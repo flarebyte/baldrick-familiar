@@ -21,7 +21,19 @@ from typing import Iterable
 
 # === Configuration ===
 FILENAMES = [
-    "README.md"
+    "README.md",
+    "CODE_ANALYSIS.md",
+    "API.md",
+    "USAGE.md",
+    "INTERNAL.md",
+    "DECISIONS.md",
+    "SCHEMA.md",
+    "NPM-SOFTWARE-DEPENDENCIES.md",
+    "PRINCIPLES.md",
+    "DART-SOFTWARE-DEPENDENCIES.md",
+    "SOFTWARE-HEALTH.md",
+    "SOFTWARE-TIMELINE.md",
+    "EVOLUTION-ORIENTED-ARCHITECTURE.md",
 ]
 
 SRC_ROOT = Path("./temp/github")
