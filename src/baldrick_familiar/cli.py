@@ -8,6 +8,7 @@ Minimal agent-friendly CLI for querying a persisted LlamaIndex.
 """
 
 from __future__ import annotations
+import os
 import argparse, json, sys
 from pathlib import Path
 from typing import Optional
@@ -17,8 +18,13 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.ollama import Ollama
 
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-DEFAULT_INDEX_PATH = SCRIPT_DIR / "temp" / "llama" / "default_index"
+SCRIPT_DIR = Path(__file__).resolve().parent                 # .../src/baldrick_familiar
+PROJECT_ROOT = SCRIPT_DIR.parent.parent                      # .../
+DEFAULT_INDEX_PATH = PROJECT_ROOT / "temp" / "llama" / "default_index"
+
+# Allow overrides via env var or CLI arg if you have one:
+INDEX_PATH = Path(os.getenv("LLAMA_INDEX_PATH", DEFAULT_INDEX_PATH))
+
 DEFAULT_EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 DEFAULT_OLLAMA_MODEL = "gemma3:1b"
 
