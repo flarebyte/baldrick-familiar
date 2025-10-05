@@ -1,0 +1,59 @@
+project:
+  title: baldrick_familiar
+  description: A clever little Docker familiar built with Python who always knows the shortest path to the best docs and the most useful code hints
+  version: 0.1.12
+  keywords:
+    - CLI
+    - python
+readme:
+  summary: >
+    todo
+  quickstart:
+    intro: todo
+    steps:
+      - todo
+    code: |
+      todo
+  cliExamples:
+    - title: todo
+      command: todo
+  links:
+    - "[Usage](USAGE.md)"
+    - "[API](API.md)"
+    - "[Code Maintenance](MAINTENANCE.md)"
+    - "[Contributing](CONTRIBUTING.md)"
+    - "[ADR](DECISIONS.md)"
+  configuration:
+    files:
+      - name: "todo"
+        description: |
+          todo
+        example: |
+         todo
+  troubleshooting:
+    - title: todo
+      details: >
+        todo
+  faq:
+    - q: todo
+      a: >
+        todo
+  architecture:
+    overview:
+      - todo
+  tags:
+    - image-hero
+github:
+  account: flarebyte
+  name: baldrick_familiar
+copyright:
+  holder: Flarebyte.com
+  startYear: 2025
+license: MIT
+author:
+  name: Olivier Huin
+  url: https://github.com/olih
+implementation:
+  tags:
+    - cli
+workflow-version: 0.3.0
