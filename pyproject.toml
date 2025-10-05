@@ -3,8 +3,8 @@ requires = ["hatchling>=1.22"]
 build-backend = "hatchling.build"
 
 [project]
-name = "baldrick-familiar"
-version = "0.1.0"
+name = "baldrick_familiar"
+version = "0.1.12"
 description = "A clever little Docker familiar built with Python who always knows the shortest path to the best docs and the most useful code hints"
 readme = "README.md"
 requires-python = ">=3.12"
