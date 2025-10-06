@@ -1,46 +1,56 @@
 project:
   title: baldrick_familiar
-  description: A clever little Docker familiar built with Python who always knows the shortest path to the best docs and the most useful code hints
+  description: A clever little Docker familiar built with Python who always knows the shortest path to the best docs and the most useful code hints. Offline‑first CLI that queries a persisted LlamaIndex via Ollama.
   version: 0.1.12
   keywords:
     - CLI
     - python
 readme:
   summary: >
-    todo
+    Agent‑friendly CLI for local RAG on macOS. Collect docs, build a
+    vector index, and query it using small Ollama models.
   quickstart:
-    intro: todo
+    intro: Setup with uv, build the index, and query.
     steps:
-      - todo
+      - uv sync
+      - sh create-content.sh
+      - uv run familiar --help
     code: |
-      todo
+      uv sync
+      sh create-content.sh
+      uv run familiar "List available docs" --format json
   cliExamples:
-    - title: todo
-      command: todo
+    - title: Query using default index
+      command: familiar "How do I rebuild the index?"
+    - title: Specify custom index path
+      command: familiar --index-path ~/.baldrick_familiar/cache/llama/default_index "What sources are indexed?"
   links:
-    - "[Usage](USAGE.md)"
-    - "[API](API.md)"
-    - "[Code Maintenance](MAINTENANCE.md)"
-    - "[Contributing](CONTRIBUTING.md)"
+    - "[Maintenance](MAINTENANCE.md)"
     - "[ADR](DECISIONS.md)"
+    - "[Code Analysis](CODE_ANALYSIS.md)"
+    - "[Agents Guide](AGENTS.md)"
   configuration:
     files:
-      - name: "todo"
-        description: |
-          todo
+      - name: Index path
+        description: Default persisted index directory used by the CLI
         example: |
-         todo
+          ~/.baldrick_familiar/cache/llama/default_index
   troubleshooting:
-    - title: todo
+    - title: Ollama model not found
       details: >
-        todo
+        Ensure Ollama is running and `gemma3:1b` is available or pass
+        `--model <name>` to the CLI.
+    - title: Index directory missing
+      details: >
+        Run `sh create-content.sh` or `uv run python script/indexer.py` to
+        rebuild the index.
   faq:
-    - q: todo
+    - q: Where is the index stored?
       a: >
-        todo
+        Under `~/.baldrick_familiar/cache/llama/default_index` by default.
   architecture:
     overview:
-      - todo
+      - Snapshot repos -> collect docs -> capture CLI help -> index -> query
   tags:
     - image-hero
 github:
