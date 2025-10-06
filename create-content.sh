@@ -6,3 +6,5 @@ python script/copy_by_filename.py
 cp -r temp/github/learning temp/data/learning
 cp -r temp/github/baldrick-reserve/data temp/data/baldrick-reserve-data
 cp -r temp/github/baldrick-reserve/template temp/data/baldrick-reserve-template
+python script/copy-mac-cli.py
+uv run python script/indexer.py

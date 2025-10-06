@@ -1,0 +1,69 @@
+project:
+  title: baldrick_familiar
+  description: A clever little Docker familiar built with Python who always knows the shortest path to the best docs and the most useful code hints. Offline‑first CLI that queries a persisted LlamaIndex via Ollama.
+  version: 0.1.12
+  keywords:
+    - CLI
+    - python
+readme:
+  summary: >
+    Agent‑friendly CLI for local RAG on macOS. Collect docs, build a
+    vector index, and query it using small Ollama models.
+  quickstart:
+    intro: Setup with uv, build the index, and query.
+    steps:
+      - uv sync
+      - sh create-content.sh
+      - uv run familiar --help
+    code: |
+      uv sync
+      sh create-content.sh
+      uv run familiar "List available docs" --format json
+  cliExamples:
+    - title: Query using default index
+      command: familiar "How do I rebuild the index?"
+    - title: Specify custom index path
+      command: familiar --index-path ~/.baldrick_familiar/cache/llama/default_index "What sources are indexed?"
+  links:
+    - "[Maintenance](MAINTENANCE.md)"
+    - "[ADR](DECISIONS.md)"
+    - "[Code Analysis](CODE_ANALYSIS.md)"
+    - "[Agents Guide](AGENTS.md)"
+  configuration:
+    files:
+      - name: Index path
+        description: Default persisted index directory used by the CLI
+        example: |
+          ~/.baldrick_familiar/cache/llama/default_index
+  troubleshooting:
+    - title: Ollama model not found
+      details: >
+        Ensure Ollama is running and `gemma3:1b` is available or pass
+        `--model <name>` to the CLI.
+    - title: Index directory missing
+      details: >
+        Run `sh create-content.sh` or `uv run python script/indexer.py` to
+        rebuild the index.
+  faq:
+    - q: Where is the index stored?
+      a: >
+        Under `~/.baldrick_familiar/cache/llama/default_index` by default.
+  architecture:
+    overview:
+      - Snapshot repos -> collect docs -> capture CLI help -> index -> query
+  tags:
+    - image-hero
+github:
+  account: flarebyte
+  name: baldrick_familiar
+copyright:
+  holder: Flarebyte.com
+  startYear: 2025
+license: MIT
+author:
+  name: Olivier Huin
+  url: https://github.com/olih
+implementation:
+  tags:
+    - cli
+workflow-version: 0.3.0

@@ -1,0 +1,211 @@
+model: {}
+workflows:
+  test:
+    title: Test the library
+    description: Test the library for defects
+    tasks:
+      sanity:
+        title: Sanity check (no tests configured)
+        description: Verify Python env and CLI wiring
+        motivation: Quick feedback without adding a test suite
+        main:
+          commands:
+            - title: Sync Python environment
+              run: uv sync
+            - title: Show CLI help
+              run: uv run familiar --help
+      all:
+        title: Lint + sanity
+        description: Run linter and basic CLI check
+        main:
+          commands:
+            - title: Ruff lint check
+              run: uvx ruff check .
+            - title: Markdown check
+              run: uvx mdformat --check .
+            - title: CLI help
+              run: uv run familiar --help
+
+  transpile:
+    title: Build the project
+    description: Build Python distributions
+    tasks:
+      py:
+        title: Build wheel and sdist
+        description: Create artifacts using uv build (hatchling backend)
+        motivation: Produce installable distributions
+        main:
+          commands:
+            - title: Clean dist folder
+              run: rm -rf dist
+            - title: Build package
+              run: uv build
+
+  deps:
+    title: Library dependencies
+    description: Python dependencies
+    tasks:
+      sync:
+        title: Sync environment from pyproject
+        description: Install/resolve dependencies
+        main:
+          commands:
+            - title: uv sync
+              run: uv sync
+      outdated:
+        title: List outdated packages
+        description: Show currently installed packages that can be upgraded
+        main:
+          commands:
+            - title: pip list outdated
+              run: uv run python -m pip list --outdated || true
+
+  doc:
+    title: Generate the documentation
+    description: Developer docs and formatting
+    tasks:
+      md-fix:
+        title: Format Markdown files
+        description: Enforce consistent Markdown formatting
+        main:
+          commands:
+            - title: Format markdown with mdformat
+              run: uvx mdformat .
+      analysis:
+        title: Update code analysis
+        description: Regenerate CODE_ANALYSIS.md if needed
+        main:
+          commands:
+            - title: Show repository anatomy reference
+              run: echo "Edit CODE_ANALYSIS.md and AGENTS.md based on src/, script/"
+
+  github:
+    title: Management of the github project
+    description: Configure useful repository settings
+    tasks:
+      standard:
+        title: Standardize repository settings
+        description: Enable common GitHub settings
+        motivation: Create consistent defaults
+        main:
+          commands:
+            - name: edit
+              title: Configure usual settings for github project
+              run: gh repo edit --delete-branch-on-merge --enable-squash-merge
+
+  lint:
+    title: Static code analysis
+    description: Find problems in the code base
+    tasks:
+      check:
+        title: Ruff lint
+        description: Run static analysis with ruff
+        motivation: Keep code consistent and avoid bugs
+        main:
+          commands:
+            - name: ruff-check
+              title: Lint check sources
+              run: uvx ruff check .
+      fix:
+        title: Auto-fix lint and format
+        description: Apply safe fixes and format with ruff
+        motivation: Facilitate routine maintenance of code
+        main:
+          commands:
+            - name: ruff-fix
+              title: Fix issues
+              run: uvx ruff check . --fix
+            - name: ruff-format
+              title: Format source files
+              run: uvx ruff format
+
+  md:
+    title: Markdown documentation
+    description: Manage Markdown documentation
+    tasks:
+      check:
+        title: Check Markdown files
+        description: Verify Markdown formatting
+        motivation: Keep docs consistent in style
+        main:
+          commands:
+            - name: check
+              title: Check markdown files
+              run: uvx mdformat --check .
+      fix:
+        title: Fix Markdown files
+        description: Format Markdown documents
+        motivation: Keep docs consistent in style
+        main:
+          commands:
+            - title: Format markdown files
+              run: uvx mdformat .
+
+  release:
+    title: Release of the library
+    tasks:
+      ready:
+        title: Ready for publishing (lightweight)
+        description: Run a sequence of checks and build distributions
+        motivation: Detect quality issues before publishing
+        parameters:
+          - description: |
+              Pull request mode.
+            flags: -p, --pull-request
+        main:
+          commands:
+            - name: build-clean
+              title: Remove previous build
+              run: rm -rf dist
+            - name: build
+              title: Build the project
+              run: uv build
+            - name: lint
+              title: Check linting
+              run: uvx ruff check .
+            - name: markdown
+              title: Check markdown files
+              run: uvx mdformat --check .
+            - name: outdated
+              title: Check whether some libraries are outdated
+              run: uv run python -m pip list --outdated || true
+            - name: report
+              a: template
+              title: Create a brief report
+              template: >
+                # Summary of the change
+
+                - Build: {{#if _.result-of-build}}ok{{else}}failed{{/if}}
+                - Lint: {{#if _.result-of-lint}}ok{{else}}failed{{/if}}
+                - Markdown: {{#if _.result-of-markdown}}ok{{else}}failed{{/if}}
+                - Outdated deps: see run log
+            - name: print-report
+              title: Show report
+              stdin: data.report
+              run: cat
+
+  rag:
+    title: Data and indexing
+    description: Collect content and build/query the local index
+    tasks:
+      content:
+        title: Create content snapshot
+        description: Run the content pipeline and index
+        main:
+          commands:
+            - title: Build content and index
+              run: sh create-content.sh
+      index:
+        title: Build index only
+        description: Read temp/data and persist the index
+        main:
+          commands:
+            - title: Index
+              run: uv run python script/indexer.py
+      query:
+        title: Example query
+        description: Query the local index using the CLI
+        main:
+          commands:
+            - title: Run sample query
+              run: uv run familiar "List available docs" --format json
