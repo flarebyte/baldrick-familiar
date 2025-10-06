@@ -4,587 +4,208 @@ workflows:
     title: Test the library
     description: Test the library for defects
     tasks:
-      coverage:
-        title: Generate unit test coverage
-        description: Run unit tests with c8 and produce lcov + summary
-        motivation: Ensure we track regressions in code coverage
+      sanity:
+        title: Sanity check (no tests configured)
+        description: Verify Python env and CLI wiring
+        motivation: Quick feedback without adding a test suite
         main:
           commands:
-            - title: Run unit tests with coverage
-              run: yarn test:cov
+            - title: Sync Python environment
+              run: uv sync
+            - title: Show CLI help
+              run: uv run familiar --help
       all:
-        title: Lint + unit + pest + coverage
-        description: Run Biome check, unit tests, acceptance tests and coverage
+        title: Lint + sanity
+        description: Run linter and basic CLI check
         main:
           commands:
-            - title: Lint check (Biome)
-              run: npx @biomejs/biome check .
-            - title: Unit tests
-              run: yarn test
-            - title: Acceptance tests (pest)
-              run: npx baldrick-broth@latest test pest
-            - title: Coverage (c8)
-              run: yarn test:cov
-            - title: Build (tsc)
-              run: yarn build
-      unit:
-        title: Run node.js unit tests
-        description: Run traditional unit tests
-        motivation: Test what is not easily covered with zest
-        links:
-          - title: JavaScript tests that report results in TAP format
-            url: https://nodejs.org/dist/latest-v18.x/docs/api/test.html
-        main:
-          commands:
-            - title: Run unit tests
-              run: yarn test
-      pest:
-        title: Run acceptance tests for the CLI
-        description: Run acceptance tests declaratively using YAML files
-        motivation: Check that the CLI application behaves as intended
-        links:
-          - title: Testing with baldrick-pest
-            url: https://github.com/flarebyte/baldrick-pest
-        before:
-          commands:
-            - title: List pest files
-              name: pest-files-string
-              run: find . -type f -name *.pest.yaml
-              onSuccess:
-                - save
-                - silent
-            - a: split-lines
-              name: pest-files
-              title: Split the list of pest files
-              value: data.pest-files-string
-        main:
-          each:
-            - name: pest-file
-              values: data.pest-files
-          commands:
-            - title: Run regression on file
-              name: Run regression on {{_.pest-file}}
-              run: npx baldrick-pest@latest test --spec-file {{_.pest-file}}
-      pest1:
-        title: Run one acceptance tests for the CLI
-        description: Run one acceptance tests declaratively using YAML files
-        motivation: Check that the CLI application behaves as intended
-        links:
-          - title: Testing with baldrick-pest
-            url: https://github.com/flarebyte/baldrick-pest
-        main:
-          commands:
-            - title: List pest files
-              name: pest-files-string
-              run: find . -type f -name *.pest.yaml
-              onSuccess:
-                - save
-                - silent
-            - a: split-lines
-              name: pest-files
-              title: Split the list of pest files
-              value: data.pest-files-string
-            - a: prompt-select
-              title: Prompt for pest filename
-              message: Select pest file
-              name: pest-file
-              select: data.pest-files
-            - title: Run pest file
-              name: run
-              run: npx baldrick-pest@latest test --spec-file {{_.pest-file}}
-      scc:
-        title: Count lines of code
-        description: Count lines of code
-        motivation: Count lines of code
-        links:
-          - title: Counting lines of code in many programming languages
-            url: https://github.com/boyter/scc
-        before:
-          commands:
-            - name: pest-files
-              title: List pest yaml files
-              run: scc pest-spec --include-ext yaml --by-file --format csv
-              onSuccess:
-                - save
-                - csv
-                - silent
-        main:
-          each:
-            - name: pest-file
-              values: data.test::pest::pest-files
-          commands:
-            - title: Display info
-              name: Display info {{pest-file.Location}}
-              run: echo {{pest-file.Location}}
-      cli:
-        title: Run client directly
-        description: Run the client with ts-node during development
-        motivation: Simulate a CLI app in development without the need to install it
-          globally
-        main:
-          commands:
-            - title: Run the CLI locally
-              run: node --loader ts-node/esm src/cli.mts
+            - title: Ruff lint check
+              run: uvx ruff check .
+            - title: Markdown check
+              run: uvx mdformat --check .
+            - title: CLI help
+              run: uv run familiar --help
+
   transpile:
-    title: Transpile the source code
-    description: Transpile source code
+    title: Build the project
+    description: Build Python distributions
     tasks:
-      ts:
-        title: Transpile typescript
-        description: Generate javascript from the typescript source code
-        motivation: Javascript code is more portable and can be consumed by other projects
-        links:
-          - title: tsc compiles typescript defined by a tsconfig.json
-            url: https://www.typescriptlang.org/docs/handbook/compiler-options.html
+      py:
+        title: Build wheel and sdist
+        description: Create artifacts using uv build (hatchling backend)
+        motivation: Produce installable distributions
         main:
           commands:
-            - title: Delete dist folder
+            - title: Clean dist folder
               run: rm -rf dist
-            - title: Compile with typescript
-              run: tsc --outDir dist
+            - title: Build package
+              run: uv build
+
   deps:
     title: Library dependencies
-    description: Npm dependencies
+    description: Python dependencies
     tasks:
-      upgrade:
-        title: Upgrade to latest dependencies
-        description: Upgrade to latest npm dependencies
-        motivation: Keep up with security and improvements
+      sync:
+        title: Sync environment from pyproject
+        description: Install/resolve dependencies
         main:
           commands:
-            - title: Upgrade to latest dependencies
-              run: yarn upgrade --latest
-            - title: Display advice about yarn upgrade-interactive
-              run: echo "❐ You could also use yarn upgrade-interactive --latest"
+            - title: uv sync
+              run: uv sync
+      outdated:
+        title: List outdated packages
+        description: Show currently installed packages that can be upgraded
+        main:
+          commands:
+            - title: pip list outdated
+              run: uv run python -m pip list --outdated || true
+
   doc:
     title: Generate the documentation
-    description: Generate the documentation automatically
+    description: Developer docs and formatting
     tasks:
-      ts:
-        title: Generate documentation
-        description: Generate the markdown documentation for the typescript project
-        motivation: Good documentation is essential for developer experience
-        links:
-          - title: TypeDoc converts comments in Typescript into a JSON model
-            url: https://typedoc.org/
-          - title: baldrick-doc-ts produces markdown documentation
-            url: https://github.com/flarebyte/baldrick-doc-ts
-          - title: baldrick-doc-ts produces markdown documentation
-            url: https://github.com/flarebyte/baldrick-doc-ts
-          - title: Package development of Typescript library in ESM format
-            url: https://github.com/flarebyte/baldrick-dev-ts
+      md-fix:
+        title: Format Markdown files
+        description: Enforce consistent Markdown formatting
         main:
           commands:
-            - name: report-folder
-              title: Ensure that we have a report folder
-              run: mkdir -p report
-            - name: typedoc
-              title: Generate typedoc doc.json
-              run: npx typedoc@latest --json report/doc.json --pretty src/index.mts
-            - name: api
-              title: Generate markdown files for the Api
-              run: npx baldrick-doc-ts@latest typedoc --json-source report/doc.json
-            - name: ngram
-              title: Generate some markdown files with ngram
-              run: npx baldrick-doc-ts@latest parse -f internal ngram
-            - name: functions-csv
-              title: Generate csv file with all the functions
-              run: npx baldrick-doc-ts@latest parse --feature functions-csv
-            - name: deps
-              title: Document the npm dependencies
-              run: npx zx
-                https://raw.githubusercontent.com/flarebyte/baldrick-reserve/main/script/npm-dependencies.mjs
-            - name: fix
-              title: Fix all the markdown files
-              run: npx baldrick-dev-ts@latest markdown fix
-            - name: github
-              title: Fixes markdown in github folder
-              run: npx baldrick-dev-ts@latest markdown fix -s .github/
+            - title: Format markdown with mdformat
+              run: uvx mdformat .
+      analysis:
+        title: Update code analysis
+        description: Regenerate CODE_ANALYSIS.md if needed
+        main:
+          commands:
+            - title: Show repository anatomy reference
+              run: echo "Edit CODE_ANALYSIS.md and AGENTS.md based on src/, script/"
+
   github:
     title: Management of the github project
-    description: Generate the documentation based on the source code
+    description: Configure useful repository settings
     tasks:
       standard:
-        title: Standardize the github repository
-        description: Enable useful features for the github project repository
-        motivation: Create consistent settings
+        title: Standardize repository settings
+        description: Enable common GitHub settings
+        motivation: Create consistent defaults
         main:
           commands:
             - name: edit
               title: Configure usual settings for github project
               run: gh repo edit --delete-branch-on-merge --enable-squash-merge
+
   lint:
     title: Static code analysis
     description: Find problems in the code base
     tasks:
       check:
-        title: Static code analysis of Typescript code
-        description: Find problems in Typescript code
-        motivation: Make the code more consistent and avoid bugs
+        title: Ruff lint
+        description: Run static analysis with ruff
+        motivation: Keep code consistent and avoid bugs
         main:
           commands:
-            - name: check
+            - name: ruff-check
               title: Lint check sources
-              run: npx @biomejs/biome check .
+              run: uvx ruff check .
       fix:
-        title: Fix static code analysis
-        description: Fix problems in Typescript code
+        title: Auto-fix lint and format
+        description: Apply safe fixes and format with ruff
         motivation: Facilitate routine maintenance of code
         main:
           commands:
-            - name: fix
-              title: Fix source code
-              run: npx @biomejs/biome check --write .
-            - name: format
+            - name: ruff-fix
+              title: Fix issues
+              run: uvx ruff check . --fix
+            - name: ruff-format
               title: Format source files
-              run: npx @biomejs/biome format . --write
+              run: uvx ruff format
+
   md:
     title: Markdown documentation
-    description: Manage markdown documentation
+    description: Manage Markdown documentation
     tasks:
       check:
         title: Check Markdown files
-        description: Checks that the markdown documents follows some consistent guidelines
-        motivation: Make the markdown documents consistent in style
+        description: Verify Markdown formatting
+        motivation: Keep docs consistent in style
         main:
           commands:
             - name: check
               title: Check markdown files
-              run: baldrick markdown check
-            - name: github
-              title: Check markdown files in github
-              run: npx baldrick-dev-ts@latest markdown check -s .github/
+              run: uvx mdformat --check .
       fix:
         title: Fix Markdown files
-        description: Modify the markdown documents to ensure they follow some consistent
-          guidelines
-        motivation: Make the markdown documents consistent in style
+        description: Format Markdown documents
+        motivation: Keep docs consistent in style
         main:
           commands:
-            - title: Fix markdown files
-              run: npx baldrick-dev-ts@latest markdown fix
-            - title: Fix markdown files in github
-              run: npx baldrick-dev-ts@latest markdown fix -s .github/
+            - title: Format markdown files
+              run: uvx mdformat .
+
   release:
     title: Release of the library
     tasks:
       ready:
-        title: Ready for publishing
-        description: Run a sequence of commands to check that the library is ready to be
-          published
-        motivation: Detect quality flaws before pushing the code
+        title: Ready for publishing (lightweight)
+        description: Run a sequence of checks and build distributions
+        motivation: Detect quality issues before publishing
         parameters:
           - description: |
               Pull request mode.
             flags: -p, --pull-request
         main:
           commands:
-            - name: remove-build
+            - name: build-clean
               title: Remove previous build
               run: rm -rf dist
             - name: build
               title: Build the project
-              run: yarn build
-            - name: release-check
-              title: Checks that the version has been incremented
-              run: npx baldrick-dev-ts@latest release check
+              run: uv build
             - name: lint
               title: Check linting
-              run: npx @biomejs/biome check .
+              run: uvx ruff check .
             - name: markdown
               title: Check markdown files
-              run: npx baldrick-dev-ts@latest markdown check
-            - name: markdown-github
-              title: Check markdown files in github
-              run: npx baldrick-dev-ts@latest markdown check -s .github/
+              run: uvx mdformat --check .
             - name: outdated
               title: Check whether some libraries are outdated
-              run: yarn outdated
-            - name: audit
-              title: Audit some libraries
-              run: yarn audit
-            - name: has-pest-files
-              title: Check if there are any pest files
-              run: find . -type f -name *.pest.yaml
-              onSuccess:
-                - save
-                - silent
-            - a: every-truthy
-              name: should-run-pest
-              title: Is this a PR and is there some pest files
-              values:
-                - data.has-pest-files
-                - runtime.parameters.pullRequest
-            - name: pest
-              title: Run the integration pest tests
-              if: data.should-run-pest
-              run: npx baldrick-broth@latest test pest
-            - name: rm-report
-              title: Remove previous report
-              run: rm -f temp/pull_request_relevant.md
+              run: uv run python -m pip list --outdated || true
             - name: report
               a: template
-              title: Create a report
+              title: Create a brief report
               template: >
                 # Summary of the change
 
+                - Build: {{#if _.result-of-build}}ok{{else}}failed{{/if}}
+                - Lint: {{#if _.result-of-lint}}ok{{else}}failed{{/if}}
+                - Markdown: {{#if _.result-of-markdown}}ok{{else}}failed{{/if}}
+                - Outdated deps: see run log
+            - name: print-report
+              title: Show report
+              stdin: data.report
+              run: cat
 
-                ## Code check
-
-
-                {{#if _.result-of-build}}- :heavy_check_mark:{{else}}- :heavy_exclamation_mark:{{/if}} Transpile to javascript
-
-                {{#if _.result-of-release-check}}- :heavy_check_mark:{{else}}- :heavy_exclamation_mark:{{/if}} The version has been incremented to "v{{build.model.project.version}}"
-
-                {{#if _.result-of-lint}}- :heavy_check_mark:{{else}}- :heavy_exclamation_mark:{{/if}} Static analysis and linting
-
-                {{#if _.result-of-markdown}}- :heavy_check_mark:{{else}}- :heavy_exclamation_mark:{{/if}} Markdown formatting
-
-                {{#if _.result-of-outdated}}- :heavy_check_mark:{{else}}- :heavy_exclamation_mark:{{/if}} No outdated NPM libraries
-
-                {{#if _.result-of-audit}}- :heavy_check_mark:{{else}}- :heavy_exclamation_mark:{{/if}} Security audit
-
-                {{#if _.result-of-pest}}- :heavy_check_mark:{{else}}- :heavy_exclamation_mark:{{/if}} Integration tests with baldrick-pest {{#unless _.should-run-pest}}(Not supported yet){{/unless}}
-            - name: write-report
-              a: append-to-file
-              title: Write the report
-              value: data.report
-              filename: temp/pull_request_relevant.md
-      pr:
-        title: Pull request for the project
-        description: Create a pull request for the branch
-        motivation: Automate the body of pull request
-        main:
-          commands:
-            - a: prompt-choices
-              name: category
-              title: Category for the pull request
-              message: Classify the pull request
-              choices:
-                - feat
-                - fix
-                - chore
-                - docs
-                - style
-                - refactor
-            - a: prompt-input
-              name: title
-              title: Title for the pull request
-              description: A short title used for the pull request
-              message: Short title describing the pull request
-            - run: gh pr create --title {{escapeSpace _.category}}:{{escapeSpace _.title}}
-                --body-file temp/pull_request_relevant.md
-              title: Create the pull request
-      publish:
-        title: Publish the current library
-        description: Publih the current library to npm
-        motivation: Detect quality flaws before pushing the code
-        main:
-          commands:
-            - name: checkout-main
-              title: Checkout main
-              run: git checkout main
-            - name: fetch-all
-              title: Fetch all
-              run: git fetch --all
-            - name: rebase-main
-              title: Rebase main
-              run: git rebase
-            - name: status
-              title: Git status
-              run: git status
-            - name: remove-build
-              title: Remove previous build
-              run: rm -rf dist
-            - name: build
-              title: Build the project
-              run: yarn build
-            - name: publish
-              title: Publish to NPM
-              run: npm publish
-            - name: release
-              title: Release the library to Github
-              run: gh release create "v{{build.model.project.version}}" --generate-notes
-            - name: refresh
-              title: Get the latest tag from Github
-              run: git fetch --all
-  scaffold:
-    title: Scaffolding for the project
+  rag:
+    title: Data and indexing
+    description: Collect content and build/query the local index
     tasks:
-      upgrade:
-        title: Upgrade baldrick-broth configuration to latest version
-        description: Gets the latest version of this configuration file
-        motivation: Always apply the latest project conventions
+      content:
+        title: Create content snapshot
+        description: Run the content pipeline and index
         main:
           commands:
-            - title: copy latest workflow
-              run: npx baldrick-whisker@latest object baldrick-broth.yaml
-                github:flarebyte:baldrick-reserve:data/ts/baldrick-broth.yaml
-      norm:
-        title: Normalize the project
-        description: Normalize the project in a similar fashion that the other
-          typescript projects
-        motivation: Make the project structure consistent and easier to navigate
+            - title: Build content and index
+              run: sh create-content.sh
+      index:
+        title: Build index only
+        description: Read temp/data and persist the index
         main:
           commands:
-            - title: Create all github repositories
-              run: mkdir -p .github/workflows .github/ISSUE_TEMPLATE
-            - title: Github - create bug report form
-              run: npx baldrick-whisker@latest object .github/ISSUE_TEMPLATE/bug_report.yaml
-                github:flarebyte:baldrick-reserve:data/ts/bug-report.yaml
-            - title: Github - create feature request form
-              run: npx baldrick-whisker@latest object
-                .github/ISSUE_TEMPLATE/feature_request.yaml
-                github:flarebyte:baldrick-reserve:data/ts/feature-request.yaml
-            - title: Github - create main workflow
-              run: npx baldrick-whisker@latest object .github/workflows/main.yml
-                github:flarebyte:baldrick-reserve:data/ts/workflow-main.yml
-            - title: Github - create pull request configuration
-              run: npx baldrick-whisker@latest render baldrick-broth.yaml
-                github:flarebyte:baldrick-reserve:template/ts/pull-request-template.hbs
-                .github/pull_request_template.md
-            - title: Create all needed repositories
-              run: mkdir -p .vscode src test spec script script/data script/schema
-            - title: Install default vscode snippets
-              run: npx baldrick-whisker@latest object --no-ext
-                .vscode/baldrick.code-snippets.json
-                github:flarebyte:baldrick-reserve:data/ts/snippet.yaml
-            - title: Create .gitignore
-              links:
-                - title: Specify files to ignore in source control
-                  url: https://git-scm.com/docs/gitignore
-              run: npx baldrick-whisker@latest render --no-ext baldrick-broth.yaml
-                github:flarebyte:baldrick-reserve:template/ts/gitignore.hbs
-                .gitignore.sh
-            - title: Create .editorconfig
-              run: npx baldrick-whisker@latest render --no-ext baldrick-broth.yaml
-                github:flarebyte:baldrick-reserve:template/editorconfig.hbs
-                .editorconfig.sh
-              links:
-                - title: Maintain consistent coding styles for spaces
-                  url: https://editorconfig.org/
-            - title: Create a starter .vscode/settings.json
-              run: npx baldrick-whisker@latest object .vscode/settings.json
-                github:flarebyte:baldrick-reserve:data/ts/vscode-settings.json
-                --no-overwrite
-            - title: Create tsconfig.json (ES2024)
-              run: npx baldrick-whisker@latest object tsconfig.json
-                github:flarebyte:baldrick-tsconfig-es2024:tsconfig.json
-            - title: Create .prettierrc.json
-              run: npx baldrick-whisker@latest object .prettierrc.json
-                github:flarebyte:baldrick-reserve:data/ts/prettierrc.json
-            - title: Create .remarkrc.yml
-              run: npx baldrick-whisker@latest object .remarkrc.yml
-                github:flarebyte:baldrick-reserve:data/ts/remarkrc.yml
-            - title: Create Biome configuration
-              run: npx baldrick-whisker@latest object biome.json
-                github:flarebyte:baldrick-reserve:data/ts/biome.json
-              links:
-                - title: Biome (formatter + linter)
-                  url: https://biomejs.dev/
-            - title: Create CONTRIBUTING.md with contribution guidelines
-              run: npx baldrick-whisker@latest render baldrick-broth.yaml
-                github:flarebyte:baldrick-reserve:template/ts/contributing.hbs
-                CONTRIBUTING.md
-            - title: Create CODE_OF_CONDUCT.md with code of conduct guidelines
-              run: npx baldrick-whisker@latest render baldrick-broth.yaml
-                github:flarebyte:baldrick-reserve:template/code-of-conduct.hbs
-                CODE_OF_CONDUCT.md
-            - title: Create a starter DECISIONS.md
-              run: npx baldrick-whisker@latest render baldrick-broth.yaml
-                github:flarebyte:baldrick-reserve:template/decisions.hbs
-                DECISIONS.md --no-overwrite
-            - title: Create README.md
-              run: npx baldrick-whisker@latest render baldrick-broth-model.yaml
-                github:flarebyte:baldrick-reserve:template/ts/readme.hbs
-                README.md
-            - title: Create TECHNICAL_DESIGN.md
-              run: npx baldrick-whisker@latest render baldrick-broth.yaml
-                github:flarebyte:baldrick-reserve:template/ts/technical-design.hbs
-                TECHNICAL_DESIGN.md
-            - title: Create MAINTENANCE.md
-              run: npx baldrick-whisker@latest render baldrick-broth.yaml
-                github:flarebyte:baldrick-reserve:template/ts/maintenance.hbs
-                MAINTENANCE.md
-            - title: Create AGENTS.md
-              run: npx baldrick-whisker@latest render baldrick-broth.yaml
-                github:flarebyte:baldrick-reserve:template/ts/agents.hbs
-                AGENTS.md
-            - title: Create LICENSE
-              run: npx baldrick-whisker@latest render --no-ext baldrick-broth-model.yaml
-                github:flarebyte:baldrick-reserve:template/ts/license.hbs
-                LICENSE.md
-            - title: Fix markdown
-              run: npx baldrick-broth@latest md fix
-            - name: package-json
-              title: Backup dependencies
-              run: cat package.json
-              onSuccess:
-                - save
-                - silent
-                - json
-            - a: mask-object
-              title: Extracts dependencies from package.json
-              name: package-json-deps
-              value: data.package-json
-              mask: dependencies,devDependencies,peerDependencies
-            - name: save-package-json-deps
-              title: Save package.json with only dependencies
-              stdin: data.package-json-deps
-              run: sponge temp/broth/package-deps.json
-            - title: Create package.json metadata from broth model
-              run: npx baldrick-whisker@latest render baldrick-broth-model.yaml
-                github:flarebyte:baldrick-reserve:template/ts/package.hbs
-                temp/broth/package-specific.json
-            - title: merge dependencies with broth model info
-              run: npx baldrick-whisker@latest object package.json
-                temp/broth/package-specific.json temp/broth/package-deps.json
-      norm-package:
-        title: Normalize the project
-        description: Normalize the project in a similar fashion that the other
-          typescript projects
-        motivation: Make the project structure consistent and easier to navigate
+            - title: Index
+              run: uv run python script/indexer.py
+      query:
+        title: Example query
+        description: Query the local index using the CLI
         main:
           commands:
-            - name: package-json
-              title: Backup dependencies
-              run: cat package.json
-              onSuccess:
-                - save
-                - silent
-                - json
-            - a: mask-object
-              title: Extracts dependencies from package.json
-              name: package-json-deps
-              value: data.package-json
-              mask: dependencies,devDependencies,peerDependencies
-            - a: write-to-file
-              title: Save package.json with only dependencies
-              name: save-package-json-deps
-              value: data.package-json-deps
-              filename: temp/broth/package-deps.json
-            - title: Create package.json metadata from broth model
-              run: npx baldrick-whisker@latest render baldrick-broth-model.yaml
-                github:flarebyte:baldrick-reserve:template/ts/package.hbs
-                temp/broth/package-specific.json
-            - title: merge dependencies with broth model info
-              run: npx baldrick-whisker@latest object package.json
-                temp/broth/package-specific.json temp/broth/package-deps.json
-      custom:
-        title: Normalize using the custom script
-        description: Normalize the project using a custom script for this project
-        motivation: Enable an imperative approach for some of normalisation to keep the
-          model simple
-        main:
-          commands:
-            - title: Normalize using the custom script
-              run: sh custom-scaffolding.sh
-      readme:
-        title: Update readme
-        description: Updates readme
-        main:
-          commands:
-            - title: Create README.md
-              run: npx baldrick-whisker@latest render baldrick-broth-model.yaml
-                github:flarebyte:baldrick-reserve:template/ts/readme.hbs
-                README.md
+            - title: Run sample query
+              run: uv run familiar "List available docs" --format json
