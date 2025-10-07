@@ -33,6 +33,7 @@ HELP_COMMANDS: List[str] = [
     "go",
     "jd",
     "jq",
+    "keyring",
     "rg",
     "scc",
     "python",

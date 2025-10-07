@@ -16,6 +16,8 @@ from typing import Optional
 import logging
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.ollama import Ollama
+from llama_index.llms.google_genai import GoogleGenAI
+import keyring
 
 
 APP_DIR = Path.home() / ".baldrick_familiar"
@@ -179,7 +181,12 @@ def main() -> int:
             )  # Ollama uses num_ctx; adjust if desired
         if args.temperature is not None:
             llm_kwargs["temperature"] = args.temperature
-        llm = Ollama(model=args.model, **llm_kwargs)
+        
+        if args.model == "gemini-2.5-flash":
+            llm = GoogleGenAI(model="gemini-2.5-flash", api_key=keyring.get_password("gemini", "dev"))    
+        else:
+            llm = Ollama(model=args.model, **llm_kwargs)
+       
 
         # Load index
         index = load_index_quiet(index_path, embed, verbose=args.verbose, debug=args.debug)
